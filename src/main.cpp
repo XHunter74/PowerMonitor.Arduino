@@ -103,6 +103,128 @@ void readPzemData()
   Serial.println("}");
 }
 
+void setup()
+{
+  Serial.begin(57600); // Debugging serial
+  Serial.println("Starting...");
+  pinMode(13, OUTPUT); // LED pin
+}
+
+int i = 0;
+
+void loop()
+{
+  float v;
+  while (Serial.available() > 0)
+  {
+    byte inChar = Serial.read();
+    if (inChar != '\n' && inChar != '\r')
+    {
+      inBuf[i++] = (char)inChar;
+    }
+    else
+    {
+      switch (inBuf[0])
+      {
+      case 'i':
+        printCoefficients();
+        break;
+      case 'v':
+        processNewVoltageCoefficient(inBuf + 1);
+        break;
+      case 'p':
+        processNewPowerCoefficient(inBuf + 1);
+        break;
+      case 'c':
+        processNewCurrentCoefficient(inBuf + 1);
+        break;
+      case 's':
+        processNewCoefficients(inBuf + 1);
+        break;
+      case 'h':
+        printHelp();
+        break;
+      case 'd':
+        printBoardInfo();
+        break;
+      case 'w':
+        isPaused = !isPaused;
+        break;
+      case 'r':
+        Serial.println("Resetting...");
+        resetFunc();
+        break;
+      }
+      i = 0;
+      memset(inBuf, 0, sizeof(inBuf));
+    }
+  }
+
+  unsigned long currentTime = millis();
+  if (!isPaused && (currentTime - lastMeasurementTime >= 999))
+  {
+    lastMeasurementTime = currentTime;
+    blinkLed();
+    readPzemData();
+  }
+}
+
+void printCoefficients()
+{
+  Serial.print("{");
+  Serial.print("\"type\":");
+  Serial.print("\"coefficients\"");
+  Serial.print(",");
+  Serial.print("\"voltage\":");
+  Serial.print(voltageCalibration, 3);
+  Serial.print(",");
+  Serial.print("\"current\":");
+  Serial.print(currentCalibration, 3);
+  Serial.print(",");
+  Serial.print("\"powerFactor\":");
+  Serial.print(powerFactorCalibration, 3);
+  Serial.println("}");
+}
+
+void processNewVoltageCoefficient(char *str)
+{
+  float v = atof(str);
+  voltageCalibration = v;
+  Serial.print("{");
+  Serial.print("\"type\":");
+  Serial.print("\"coefficients\"");
+  Serial.print(",");
+  Serial.print("\"voltage\":");
+  Serial.print(voltageCalibration, 3);
+  Serial.println("}");
+}
+
+void processNewPowerCoefficient(char *str)
+{
+  float v = atof(str);
+  powerFactorCalibration = v;
+  Serial.print("{");
+  Serial.print("\"type\":");
+  Serial.print("\"coefficients\"");
+  Serial.print(",");
+  Serial.print("\"powerFactor\":");
+  Serial.print(powerFactorCalibration, 3);
+  Serial.println("}");
+}
+
+void processNewCurrentCoefficient(char *str)
+{
+  float v = atof(str);
+  currentCalibration = v;
+  Serial.print("{");
+  Serial.print("\"type\":");
+  Serial.print("\"coefficients\"");
+  Serial.print(",");
+  Serial.print("\"current\":");
+  Serial.print(currentCalibration, 3);
+  Serial.println("}");
+}
+
 void processNewCoefficients(char *str)
 {
   byte j = 0;
@@ -154,123 +276,31 @@ void processNewCoefficients(char *str)
   Serial.println("}");
 }
 
-void setup()
+void printBoardInfo()
 {
-  Serial.begin(57600); // Debugging serial
-  Serial.println("Starting...");
-  pinMode(13, OUTPUT); // LED pin
+  Serial.print("{");
+  Serial.print("\"type\":");
+  Serial.print("\"info\"");
+  Serial.print(",");
+  Serial.print("\"version\":");
+  Serial.print("\"");
+  Serial.print(VERSION);
+  Serial.print("\"");
+  Serial.print(",");
+  Serial.print("\"date\":");
+  Serial.print("\"");
+  Serial.print(BUILD_DATE);
+  Serial.print("\"");
+  Serial.println("}");
 }
 
-int i = 0;
-
-void loop()
+void printHelp()
 {
-  float v;
-  while (Serial.available() > 0)
-  {
-    byte inChar = Serial.read();
-    if (inChar != '\n' && inChar != '\r')
-    {
-      inBuf[i++] = (char)inChar;
-    }
-    else
-    {
-      switch (inBuf[0])
-      {
-      case 'i':
-        Serial.print("{");
-        Serial.print("\"type\":");
-        Serial.print("\"coefficients\"");
-        Serial.print(",");
-        Serial.print("\"voltage\":");
-        Serial.print(voltageCalibration, 3);
-        Serial.print(",");
-        Serial.print("\"current\":");
-        Serial.print(currentCalibration, 3);
-        Serial.print(",");
-        Serial.print("\"powerFactor\":");
-        Serial.print(powerFactorCalibration, 3);
-        Serial.println("}");
-        break;
-      case 'v':
-        v = atof(inBuf + 1);
-        voltageCalibration = v;
-        Serial.print("{");
-        Serial.print("\"type\":");
-        Serial.print("\"coefficients\"");
-        Serial.print(",");
-        Serial.print("\"voltage\":");
-        Serial.print(voltageCalibration, 3);
-        Serial.println("}");
-        break;
-      case 'p':
-        v = atof(inBuf + 1);
-        powerFactorCalibration = v;
-        Serial.print("{");
-        Serial.print("\"type\":");
-        Serial.print("\"coefficients\"");
-        Serial.print(",");
-        Serial.print("\"powerFactor\":");
-        Serial.print(powerFactorCalibration, 3);
-        Serial.println("}");
-        break;
-      case 'c':
-        v = atof(inBuf + 1);
-        currentCalibration = v;
-        Serial.print("{");
-        Serial.print("\"type\":");
-        Serial.print("\"coefficients\"");
-        Serial.print(",");
-        Serial.print("\"current\":");
-        Serial.print(currentCalibration, 3);
-        Serial.println("}");
-        break;
-      case 's':
-        processNewCoefficients(inBuf + 1);
-        break;
-      case 'h':
-        Serial.println("Usage");
-        Serial.println("i - calibrations values: voltage:current:power factor");
-        Serial.println("v - voltage calibration");
-        Serial.println("p - power factor calibration");
-        Serial.println("c - current calibration");
-        Serial.println("d - build date");
-        Serial.println("w - pause monitor");
-        break;
-      case 'd':
-        Serial.print("{");
-        Serial.print("\"type\":");
-        Serial.print("\"info\"");
-        Serial.print(",");
-        Serial.print("\"version\":");
-        Serial.print("\"");
-        Serial.print(VERSION);
-        Serial.print("\"");
-        Serial.print(",");
-        Serial.print("\"date\":");
-        Serial.print("\"");
-        Serial.print(BUILD_DATE);
-        Serial.print("\"");
-        Serial.println("}");
-        break;
-      case 'w':
-        isPaused = !isPaused;
-        break;
-      case 'r':
-        Serial.println("Resetting...");
-        resetFunc();
-        break;
-      }
-      i = 0;
-      memset(inBuf, 0, sizeof(inBuf));
-    }
-  }
-
-  unsigned long currentTime = millis();
-  if (!isPaused && (currentTime - lastMeasurementTime >= 999))
-  {
-    lastMeasurementTime = currentTime;
-    blinkLed();
-    readPzemData();
-  }
+  Serial.println("Usage");
+  Serial.println("i - calibrations values: voltage:current:power factor");
+  Serial.println("v - voltage calibration");
+  Serial.println("p - power factor calibration");
+  Serial.println("c - current calibration");
+  Serial.println("d - build date");
+  Serial.println("w - pause monitor");
 }
