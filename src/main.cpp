@@ -5,6 +5,7 @@
 #include <PZEM004Tv30.h>
 #include <SoftwareSerial.h>
 #include <version.h>
+#include "led_control.h"
 
 #if defined(ESP32)
 #error "Software Serial is not supported on the ESP32"
@@ -25,19 +26,11 @@ SoftwareSerial pzemSWSerial(PZEM_RX_PIN, PZEM_TX_PIN);
 PZEM004Tv30 pzem(pzemSWSerial);
 
 char inBuf[20];
-int ledState = 0;
 float voltageCalibration = 0.92;
 float currentCalibration = 2.52;
 float powerFactorCalibration = 1.0;
 byte isPaused = 0;
 unsigned long lastMeasurementTime = 0;
-
-void blinkLed()
-{
-  // Serial.print("Led State:"); Serial.println(ledState);
-  digitalWrite(13, ledState ? LOW : HIGH);
-  ledState = !ledState;
-}
 
 float prevVoltage = 0;
 float prevCurrent = 0;
@@ -51,8 +44,6 @@ void readPzemData()
   // Read data from the sensor
   float voltage = pzem.voltage();
   float current = pzem.current();
-  // float power = pzem.power();
-  // float pf = pzem.pf();
   float frequency = pzem.frequency();
 
   // Validate readings and use previous values if needed
@@ -75,18 +66,6 @@ void readPzemData()
   {
     current = (voltageErrors < 2) ? prevCurrent : 0;
   }
-
-  // if (!isnan(power)) {
-  //   prevPower = power;
-  // } else {
-  //   power = (voltageErrors < 2) ? prevPower : 0;
-  // }
-
-  // if (!isnan(pf)) {
-  //   prevPf = pf;
-  // } else {
-  //   pf = (voltageErrors < 2) ? prevPf : 0;
-  // }
 
   if (!isnan(frequency))
   {
