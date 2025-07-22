@@ -25,6 +25,9 @@ void (*resetFunc)(void) = 0;
 SoftwareSerial pzemSWSerial(PZEM_RX_PIN, PZEM_TX_PIN);
 PZEM004Tv30 pzem(pzemSWSerial);
 
+const float MAX_VOLTAGE = 400.0; // Maximum voltage
+const float MAX_CURRENT = 100.0; // Maximum current
+
 char inBuf[20];
 float voltageCalibration = 0.92;
 float currentCalibration = 2.52;
@@ -80,7 +83,7 @@ void readPzemData()
   voltage *= voltageCalibration;
   current *= currentCalibration;
 
-  if (voltage < 0.0 || voltage > 300.0 || current < 0.0 || current > 100.0 || frequency < 45.0 || frequency > 65.0)
+  if (!(voltage >= 0.0 && voltage <= MAX_VOLTAGE && current >= 0.0 && current <= MAX_CURRENT))
   {
     return;
   }
