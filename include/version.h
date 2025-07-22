@@ -1,7 +1,7 @@
 
 #ifndef VERSION
-  #define VERSION "3.0.9"
+  #define VERSION "3.0.17"
 #endif
 #ifndef BUILD_DATE
-  #define BUILD_DATE "2024-12-31 11:45"
+  #define BUILD_DATE "2025-07-22 21:22"
 #endif
