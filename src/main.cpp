@@ -87,23 +87,21 @@ void readPzemData()
   {
     return;
   }
-  // Print values with high precision
-  // Print values as JSON
-  Serial.print("{");
-  Serial.print("\"type\":");
-  Serial.print("\"data\"");
-  Serial.print(",");
-  // Serial.print("\"power\":"); Serial.print(power, 3); Serial.print(",");
-  Serial.print("\"voltage\":");
-  Serial.print(voltage, 3);
-  Serial.print(",");
-  Serial.print("\"current\":");
-  Serial.print(current, 3);
-  Serial.print(",");
-  Serial.print("\"frequency\":");
-  Serial.print(frequency, 3);
-  // Serial.print("\"powerFactor\":"); Serial.print(pf, 3);
-  Serial.println("}");
+
+  // Rewritten: avoid %f in snprintf (not supported on AVR -> produced '?')
+  char jsonBuf[96];
+  char vBuf[12], cBuf[12], fBuf[12];
+  dtostrf(voltage, 0, 3, vBuf);
+  dtostrf(current, 0, 3, cBuf);
+  dtostrf(frequency, 0, 3, fBuf);
+
+  int n = snprintf(jsonBuf, sizeof(jsonBuf),
+                   "{\"type\":\"data\",\"voltage\":%s,\"current\":%s,\"frequency\":%s}",
+                   vBuf, cBuf, fBuf);
+  if (n > 0 && n < (int)sizeof(jsonBuf))
+  {
+    Serial.println(jsonBuf);
+  }
 }
 
 void printCoefficients()
@@ -259,7 +257,17 @@ void loop()
     byte inChar = Serial.read();
     if (inChar != '\n' && inChar != '\r')
     {
-      inBuf[i++] = (char)inChar;
+      // Prevent buffer overflow (previously could corrupt memory -> malformed JSON)
+      if (i < (int)sizeof(inBuf) - 1)
+      {
+        inBuf[i++] = (char)inChar;
+      }
+      else
+      {
+        // Overflow: reset buffer
+        i = 0;
+        memset(inBuf, 0, sizeof(inBuf));
+      }
     }
     else
     {
