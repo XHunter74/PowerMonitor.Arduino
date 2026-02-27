@@ -88,6 +88,11 @@ void readPzemData()
     return;
   }
 
+  if ((voltage == 0 && current > 0) || (voltage > 0 && current == 0))
+  {
+    return;
+  }
+
   // Rewritten: avoid %f in snprintf (not supported on AVR -> produced '?')
   char jsonBuf[96];
   char vBuf[12], cBuf[12], fBuf[12];
