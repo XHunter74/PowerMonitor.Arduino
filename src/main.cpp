@@ -256,7 +256,6 @@ int i = 0;
 
 void loop()
 {
-  float v;
   while (Serial.available() > 0)
   {
     byte inChar = Serial.read();
